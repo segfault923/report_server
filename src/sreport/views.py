@@ -170,8 +170,10 @@ def report_admin(request):
     else:
         startDate = request.POST['startDate'].encode('ascii').split("/")
         endDate = request.POST['endDate'].encode('ascii').split("/")
+        _LOG.info(startDate);
         start = datetime(int(startDate[2]), int(startDate[0]), int(startDate[1]))
         end = datetime(int(endDate[2]), int(endDate[0]), int(endDate[1]))
+        _LOG.info(start);
     
     if 'env' in request.POST:
         environment = request.POST['env']

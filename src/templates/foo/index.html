@@ -478,46 +478,52 @@
                 // cleanup first
                 pane.empty();
 
-                for (var rhic_index in rtn.list) {
-                    var rhic = rtn.list[rhic_index];
+                if (rtn.list.length > 0) {
+                    for (var rhic_index in rtn.list) {
+                        var rhic = rtn.list[rhic_index];
 
-                    var table = $('<table id=\'report_data\' class=\'display\' style=\'display: table\' width=\'100%\'></table>');
+                        var table = $('<table id=\'report_data\' class=\'display\' style=\'display: table\' width=\'100%\'></table>');
 
-                    var header = ($('<tr></tr>'));
-                    header.append($('<th>Product:</th>'));
-                    header.append($('<th>SLA:</th>'));
-                    header.append($('<th>Support:</th>'));
-                    header.append($('<th>Facts:</th>'));
-                    header.append($('<th>Contracted Use:</th>'));
-                    header.append($('<th>NAU:</th>'));
+                        var header = ($('<tr></tr>'));
+                        header.append($('<th>Product:</th>'));
+                        header.append($('<th>SLA:</th>'));
+                        header.append($('<th>Support:</th>'));
+                        header.append($('<th>Facts:</th>'));
+                        header.append($('<th>Contracted Use:</th>'));
+                        header.append($('<th>NAU:</th>'));
 
-                    table.append(header);
-                    
-                    var tbody = $('<tbody></tbody>');
+                        table.append(header);
 
-                    // The following logic has to reduce to one for loop
-                    for (var product_index in rhic) {
-                        var product = rhic[product_index]; 
-                        
-                        // insert something if it's the first item
-                        if (product_index == 0) {
-                            pane.append($('<b>RHIC: ' + product.rhic + ', Contract: ' + product.contract_id + '</b>'));
+                        var tbody = $('<tbody></tbody>');
+
+                        // The following logic has to reduce to one for loop
+                        for (var product_index in rhic) {
+                            var product = rhic[product_index]; 
+
+                            // insert something if it's the first item
+                            if (product_index == 0) {
+                                pane.append($('<b>RHIC: ' + product.rhic + ', Contract: ' + product.contract_id + '</b>'));
+                            }
+
+                            var row = $('<tr></tr>');
+                            row.append($('<td>' + product.product_name + '</td>'));
+                            row.append($('<td>' + product.sla + '</td>'));
+                            row.append($('<td>' + product.support + '</td>'));
+                            row.append($('<td>' + product.facts + '</td>'));
+                            row.append($('<td>' + product.contract_use + '</td>'));
+                            row.append($('<td><a href=\'#\' onclick="createDetail(\'' + product.start + '\',\'' + product.end + '\', \'' + escape(new String(product.filter_args_dict)) + '\')">' + product.checkins + '</a></td>'));
+
+                            tbody.append(row);
                         }
 
-                        var row = $('<tr></tr>');
-                        row.append($('<td>' + product.product_name + '</td>'));
-                        row.append($('<td>' + product.sla + '</td>'));
-                        row.append($('<td>' + product.support + '</td>'));
-                        row.append($('<td>' + product.facts + '</td>'));
-                        row.append($('<td>' + product.contract_use + '</td>'));
-                        row.append($('<td><a href=\'#\' onclick="createDetail(\'' + product.start + '\',\'' + product.end + '\', \'' + escape(new String(product.filter_args_dict)) + '\')">' + product.checkins + '</a></td>'));
+                        table.append(tbody);
 
-                        tbody.append(row);
+                        pane.append(table);
+                        pane.append($('<br></br>'));
                     }
-
-                    table.append(tbody);
-
-                    pane.append(table);
+                } else {
+                    pane.append($('<h3>This date range contains no usage data.</h3>'));
+                    pane.append($('<br></br>'));
                     pane.append($('<br></br>'));
                 }
             }
@@ -815,6 +821,9 @@
                             </div>
                             <div id='report_pane'>
                                 <div>
+                                    <h3>This date range contains no usage data.</h3>
+                                    <br></br>
+                                    <br></br>
                                 </div>
                                     <button id='createAnotherReport_button' class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" onclick='openCreate()'>
                                         <span class='ui-button-text'>Run another report</span>
@@ -841,7 +850,7 @@
                             </div>
                             <div id='detail_pane'>
                                 <div id='details'>
-                                    <b><span>Please create a report first.</span></b>
+                                    <b><span>Please generate a report first and then click the NAU link.</span></b>
                                 </div>
                                 <br></br>
                                 <div id='instance_details'>
