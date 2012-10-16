@@ -29,7 +29,7 @@
 				csrftoken = getCookie('csrftoken');
                 setupLoginForm();
                 setupLLButtons();
-                setupCreateForm(false);
+                openCreate();
                 $('#login-button').click(login);
                 $('#logout-button').click(logout);
 
@@ -75,8 +75,8 @@
                     disableButton($('#logout-button'));
                     logged_in = false;
                 }
-
                 loadContent();
+                $('#login-error').hide();
             }
 
             function setupCreateForm(recreate) {
@@ -88,7 +88,6 @@
                 $('#endDate').attr('disabled', true);
                 $('#rhic').attr('disabled', true);
                 $('#contract').attr('disabled', true);
-                $('#submit').attr('disabled', true);
 				$("#startDate").attr('disabled', true);
 				$("#endDate").attr('disabled', true);
 
@@ -100,16 +99,6 @@
 
                 $('#startDate').datepicker();
                 $('#endDate').datepicker();
-
-				removeActiveNav();
-				$('#create_button').addClass('active');
-
-                if (logged_in) {
-                    $('#create_pane').show();
-                    $('#report_pane').hide();
-                    $('#detail_pane').hide();
-                    $('#import_pane').hide();
-                }
 
                 if (!recreate) {
 					$.ajax({
@@ -129,8 +118,6 @@
 						// TODO: Add error handling here
 					});
                 }
-
-				$('#report_form').submit(function(event){createReport(event);});
             }
 
 
@@ -187,7 +174,21 @@
             }
 
             // There has to be a better way to make the
-            // next three function generic.
+            // next four function generic.
+
+            function openCreate() {
+				removeActiveNav();
+				$('#create_button').addClass('active');
+    
+                if (logged_in) {
+                    $('#create_pane').show();
+                    $('#report_pane').hide();
+                    $('#detail_pane').hide();
+                    $('#import_pane').hide();
+                }
+
+                setupCreateForm(false);
+            }
 
             function openReport() {
 				removeActiveNav();
@@ -358,6 +359,7 @@
 									}
 								}
                             }).done(function(data) {
+                                $('#login-error').hide();
                                 $('#login-form').dialog('close');
                                 // Gray out "Login" button
                                 enableButton($('#logout-button'));
@@ -370,10 +372,11 @@
                                 loadContent();
 
                             }).fail(function(jqXHR) {
-                                // TODO: Add error handling here
+                                $('#login-error').show();
                             });
                         },
                         "Cancel": function() {
+                            $('#login-error').hide();
                             $('#login-form').dialog('close');
                         }
                     }
@@ -416,17 +419,11 @@
                     $('#report_pane').hide();
                     $('#detail_pane').hide();
                     $('#import_pane').hide();
-                } else {
-                    /*
-                    removeActiveNav();
-                    $('#create_button').addClass('active');
 
-                    $('#create_pane').show();
-                    $('#report_pane').hide();
-                    $('#detail_pane').hide();
-                    $('#import_pane').hide();
-                    */
-                    setupCreateForm(false);
+                    $('#navWrap').hide();
+                } else {
+                    $('#navWrap').show();
+                    openCreate();
                 }
             }
 
@@ -472,12 +469,6 @@
                         // disable radio button for contract
                         $("input[value='contract_radio']").prop('checked', false);
                         break;
-                }
-                // Disable the submit button until everything required is selected
-                if (!$("#byMonth").attr('disabled') || !$("#endDate").attr('disabled')) {
-                    if (!$("#contract").attr('disabled')|| !$("#rhic").attr('disabled')) {
-                            $("#submit").removeAttr('disabled');
-                    }
                 }
             }
 
@@ -630,16 +621,26 @@
             }
 
 			function validateForm() {
-				var date_month=(report_form.byMonth.value);
-				if (date_month=="-1" && document.forms[0].elements["byMonth"].disabled==false){
-					alert("Please Select Month"); return false; 
-				}
-				var datepicker_start=(report_form.startDate.value);
-				if (datepicker_start == "" && document.forms[0].elements["startDate"].disabled==false){
-					alert("Please select a Custom Date Range");
-					return false; 
-				}
-				return true;
+                var rtn = true;
+
+                $('#form_error').empty();
+
+                if ($('#byMonth').val() > 0 || ($('#startDate').val() && $('#endDate').val())) {
+                    // pass
+                } else {
+                    $('#form_error').append($('<b>Please enter a valid date range or select a month.</b>'));
+                    $('#form_error').append($('<br></br>'));
+                    rtn = false;
+                }
+
+                if ($('#contract').attr('disabled') && $('#rhic').attr('disabled')) {
+                    $('#form_error').append($('<b>Please select a Contract or RHIC.</b>'));
+                    $('#form_error').append($('<br></br>'));
+                    rtn = false;
+                } else {
+                    // pass
+                }
+                return rtn;
 			}
 
 			function csrfSafeMethod(method) {
@@ -658,7 +659,9 @@
             input {
                 vertical-align: bottom;
             }
-
+            #form_error {
+                color: red;
+            }
         </style>
     </head>
     <body>
@@ -708,7 +711,7 @@
                                         Create a much more generic way of attaching and
                                         exercising onclick events.
                                     -->
-                                    <li id='create_button' onclick='setupCreateForm(false)' class='active'><a href="#">Create Report</a></li>
+                                    <li id='create_button' onclick='openCreate()' class='active'><a href="#">Create Report</a></li>
                                     <li id='report_button' onclick='openReport()'><a href='#'>View Report</a></li>
                                     <li id='detail_button' onclick='openDetail()'><a href='#'>View Detail</a></li>
                                     <li id='import_button' onclick='openImport()'><a href="#">Import Data</a></li>
@@ -799,19 +802,21 @@
                                             </tr>
                                             <tr>
                                                 <td width="5%">
-                                                    <button id='submit' type='submit' name='submit' class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" disabled=true>
+                                                    <button id='submit' name='submit' class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" onclick='createReport(event)'>
                                                         <span class='ui-button-text'>Run Report</span>
                                                     </button>
                                                 </td>
                                             </tr>
                                         </table>
+                                        <div id='form_error'>
+                                        </div>
                                     </form>
                                 </fieldset>
                             </div>
                             <div id='report_pane'>
                                 <div>
                                 </div>
-                                    <button id='createAnotherReport_button' class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" onclick='setupCreateForm(false)'>
+                                    <button id='createAnotherReport_button' class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" onclick='openCreate()'>
                                         <span class='ui-button-text'>Run another report</span>
                                     </button>
                                 <table width="100%">
@@ -865,7 +870,7 @@
                     <input type="password" name="password" id="password" class="text ui-widget-content ui-corner-all" />
                 </fieldset>
             </form>
-            <div id="login-error" class="ui-state-error ui-helper-hidden">
+            <div id="login-error" class="ui-state-error">
                 <div class="ui-state-error-text">
                     <p>Invalid Username or Password.</p>
                     <p>Please try again.</p>
